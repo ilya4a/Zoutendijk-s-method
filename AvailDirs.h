@@ -59,7 +59,9 @@ class AvailDirs {
         std::vector<double> const &s,
         std::vector<int> const&nearly_to_active_cond_set);
 
-    std::vector<double> solv_dirs_method(std::vector<double> const& x0);
+    bool check_out_conditions(std::vector<double> const& x);
+
+    std::vector<double> solv_dirs_method(std::vector<double>& x0);
 public:
 
     // func[0] - target, func[1...] - restrictions

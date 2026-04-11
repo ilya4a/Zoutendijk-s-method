@@ -48,19 +48,41 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
 
 double AvailDirs::calc_new_alpha(std::vector<double> const &x,
     std::vector<double> const &s,
+
     std::vector<int> const&nearly_to_active_cond_set) {
     double new_alpha = alpha;
     for (int k = 1; k < MAX_POW; k++) {
         std::vector<double> x_new(x.size());
-        for (int i = 0; i < x.size(); i++) {x_new[i] = x[i] + alpha;}
 
-        if ((*functions[0])(x_new) <= 0) {
-            for () // CALC APLHA
+        for (int i = 0; i < x.size(); i++) {x_new[i] = x[i] + alpha * s[i];}
+
+        if ((*functions[0])(x_new) <= (*functions[0])(x) + 0.5*eng*new_alpha) {
+
+            bool success = true;
+            for (auto const& i: nearly_to_active_cond_set) {
+                if ((*functions[0])(x_new) >= 0) {
+                    success = false;
+                    break;
+                }
+            }
+            if (success){ return new_alpha;}
+            else {new_alpha *= lambda; }
         }
     }
+
+    return new_alpha;
 }
 
+bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
+    double delta_ok
+}
+
+
 std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
+
+    while ()
+
+
     std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
     std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
@@ -76,9 +98,10 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
     solve_subproblem(possible_dir, eng_out, gradients, A);
     eng = eng_out;
     if (eng < -delta) {
-        // for (auto&p: possible_dir) { p = p*alpha;};
-
-
+        double new_alpha = calc_new_alpha(x0, possible_dir, nearly_to_active_cond_set);
+        for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
+    }else {
+        delta *= lambda;
     }
 
 }

@@ -46,7 +46,21 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
     return res;
 }
 
-std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> const& x0) {
+double AvailDirs::calc_new_alpha(std::vector<double> const &x,
+    std::vector<double> const &s,
+    std::vector<int> const&nearly_to_active_cond_set) {
+    double new_alpha = alpha;
+    for (int k = 1; k < MAX_POW; k++) {
+        std::vector<double> x_new(x.size());
+        for (int i = 0; i < x.size(); i++) {x_new[i] = x[i] + alpha;}
+
+        if ((*functions[0])(x_new) <= 0) {
+            for () // CALC APLHA
+        }
+    }
+}
+
+std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
     std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
     std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
@@ -60,7 +74,12 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> const& x0) {
     std::vector<double> possible_dir(x0.size());
     double eng_out = 0.0;
     solve_subproblem(possible_dir, eng_out, gradients, A);
-    
+    eng = eng_out;
+    if (eng < -delta) {
+        // for (auto&p: possible_dir) { p = p*alpha;};
+
+
+    }
 
 }
 
@@ -147,7 +166,7 @@ bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
     }
 
 bool AvailDirs::load_problem(Functions functions, Matrix const &A, std::vector<double> b) {
-    this->functions = functions;
+    this->functions = std::move(functions);
     this->A = A;
     this->b = b;
     if (!check_problem()) return false;

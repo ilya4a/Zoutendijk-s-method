@@ -18,6 +18,8 @@ class AvailDirs {
     using Matrix = std::vector<std::vector<double>>;
     using Functions = std::vector<std::unique_ptr<FuncWrap>>;
 
+    const int MAX_POW = 100;
+
     Functions functions;
     Matrix A;
     std::vector<double> b;
@@ -27,6 +29,7 @@ class AvailDirs {
     double alpha;
     double lambda;
     double delta;
+    double eng;
 
     AvailDirs();
     void calc_columns_clp_simplex(
@@ -51,6 +54,10 @@ class AvailDirs {
     std::vector<double> solveUnderdeterminedEigen(const Matrix& A, const std::vector<double>& b);
 
     std::vector<int> get_delta_conditions(std::vector<double> const& x);
+
+    double calc_new_alpha(std::vector<double> const &x,
+        std::vector<double> const &s,
+        std::vector<int> const&nearly_to_active_cond_set);
 
     std::vector<double> solv_dirs_method(std::vector<double> const& x0);
 public:

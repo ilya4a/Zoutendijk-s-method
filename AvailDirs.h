@@ -20,7 +20,7 @@ class AvailDirs {
 
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
-    const double EPS = 1e-5;
+    const double EPS = 1e-3;
 
     Functions functions;
     Matrix A;
@@ -55,7 +55,7 @@ class AvailDirs {
     // bool check_func_conditions(std::vector<double> const& x, double& min_f_x);
     std::vector<double> solveUnderdeterminedEigen();
 
-    std::vector<int> get_delta_conditions(std::vector<double> const& x);
+    std::vector<int> get_delta_conditions(std::vector<double> const& x, bool include_target);
 
     double calc_new_alpha(std::vector<double> const &x,
         std::vector<double> const &s,

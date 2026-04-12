@@ -21,13 +21,18 @@ std::vector<double> AvailDirs::solveUnderdeterminedEigen() {
     return {x.data(), x.data() + n};
 }
 
-std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
+std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x, bool include_target) {
 
     double fistappr = (is_first_approx) ? eng : 0.0;
 
     std::vector<int> res;
     int j = 0;
+    bool is_first = true;
     for (auto const& f: functions) {
+        if (is_first) {
+            is_first = false;
+            continue;
+        }
         double v = (*f)(x) - fistappr;
         if (-delta <= v && v <= 0) {res.push_back(j);}
         j++;
@@ -37,8 +42,8 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
 
 double AvailDirs::calc_new_alpha(std::vector<double> const &x,
     std::vector<double> const &s,
-
-    std::vector<int> const&nearly_to_active_cond_set) {
+    std::vector<int> const&nearly_to_active_cond_set )
+{
     double new_alpha = alpha;
     for (int k = 1; k < MAX_POW; k++) {
         std::vector<double> x_new(x.size());
@@ -49,7 +54,7 @@ double AvailDirs::calc_new_alpha(std::vector<double> const &x,
 
             bool success = true;
             for (auto const& i: nearly_to_active_cond_set) {
-                if ((*functions[0])(x_new) >= 0) {
+                if ((*functions[i])(x_new) >= 0) {
                     success = false;
                     break;
                 }
@@ -79,7 +84,7 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
 
     int num = 0;
 
-    while (check_out_conditions(x0) || num > MAX_ITER) {
+    while (check_out_conditions(x0) && num < MAX_ITER) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
         std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
@@ -115,7 +120,7 @@ std::vector<double> AvailDirs::calc_fist_approx() {
     double temp_delta = delta;
     is_first_approx = true;
 
-    while (eng >= 0 || num > MAX_ITER) {
+    while (eng >= 0 && num < MAX_ITER) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
         std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
@@ -127,7 +132,7 @@ std::vector<double> AvailDirs::calc_fist_approx() {
         }
 
         std::vector<double> possible_dir(x0.size());
-        double eng_out = 0.0;
+        double eng_out = 777;
         solve_subproblem(possible_dir, eng_out, gradients, A);
         eng = eng_out;
 
@@ -139,7 +144,7 @@ std::vector<double> AvailDirs::calc_fist_approx() {
     is_first_approx = false;
 
 
-    if (num > MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
+    if (num >= MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
     return x0;
 }
 
@@ -148,6 +153,13 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 std::vector<double> AvailDirs::solve_problem() {
 
     std::vector<double> fist_approx = calc_fist_approx();
+
+    std::cout << "first approx: ";
+    for (auto& i : fist_approx) std::cout << i << std::endl;
+
+
+    std::cout << "eng: " <<  eng <<  std::endl;
+
     return solv_dirs_method(fist_approx);
 }
 
@@ -250,6 +262,11 @@ bool AvailDirs::check_problem() {
 AvailDirs::AvailDirs() {
     is_problem_exists = false;
     is_first_approx = false;
+
+    alpha = 0.5;
+    lambda = 0.5;
+    delta = 0.5;
+    eng = 1;
 }
 
 void AvailDirs::calc_columns_clp_simplex(ColSet &columns,

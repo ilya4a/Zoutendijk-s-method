@@ -19,19 +19,21 @@ class AvailDirs {
     using Functions = std::vector<std::unique_ptr<FuncWrap>>;
 
     const int MAX_POW = 100;
+    const int MAX_ITER = 100;
+    const double EPS = 1e-5;
 
     Functions functions;
     Matrix A;
     std::vector<double> b;
 
     bool is_problem_exists;
+    bool is_first_approx;
 
     double alpha;
     double lambda;
     double delta;
     double eng;
 
-    AvailDirs();
     void calc_columns_clp_simplex(
             ColSet& columns,
             const std::vector<std::vector<double>>& gradients,
@@ -50,8 +52,8 @@ class AvailDirs {
 
     bool check_problem();
 
-    bool check_func_condidions(std::vector<double> const& x, double& min_f_x);
-    std::vector<double> solveUnderdeterminedEigen(const Matrix& A, const std::vector<double>& b);
+    // bool check_func_conditions(std::vector<double> const& x, double& min_f_x);
+    std::vector<double> solveUnderdeterminedEigen();
 
     std::vector<int> get_delta_conditions(std::vector<double> const& x);
 
@@ -62,7 +64,12 @@ class AvailDirs {
     bool check_out_conditions(std::vector<double> const& x);
 
     std::vector<double> solv_dirs_method(std::vector<double>& x0);
+
+    std::vector<double> calc_fist_approx();
+
 public:
+
+    AvailDirs();
 
     // func[0] - target, func[1...] - restrictions
     bool load_problem(Functions functions, Matrix const& A, std::vector<double> b);

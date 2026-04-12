@@ -4,21 +4,7 @@
 
 #include "AvailDirs.h"
 
-
-
-
-bool AvailDirs::check_func_condidions(std::vector<double> const &x, double& min_f_x) {
-    double min = 1;
-    for (int i = 1; i < functions.size(); i++) {
-        double min_candidate = (*functions[i])(x);
-        if (  min_candidate >= 0 ) return false;
-        if (min_candidate < min) min = min_candidate;
-    }
-    min_f_x = min;
-    return true;
-}
-
-std::vector<double> AvailDirs::solveUnderdeterminedEigen(const Matrix &A, const std::vector<double> &b) {
+std::vector<double> AvailDirs::solveUnderdeterminedEigen() {
     int m = A.size();          // число уравнений
     int n = m > 0 ? A[0].size() : 0; // число переменных
 
@@ -36,10 +22,13 @@ std::vector<double> AvailDirs::solveUnderdeterminedEigen(const Matrix &A, const 
 }
 
 std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
+
+    double fistappr = (is_first_approx) ? eng : 0.0;
+
     std::vector<int> res;
     int j = 0;
     for (auto const& f: functions) {
-        double v = (*f)(x);
+        double v = (*f)(x) - fistappr;
         if (-delta <= v && v <= 0) {res.push_back(j);}
         j++;
     }
@@ -74,36 +63,92 @@ double AvailDirs::calc_new_alpha(std::vector<double> const &x,
 }
 
 bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
-    double delta_ok
+
+    double maxf = std::numeric_limits<double>::lowest();
+    for (int i = 0; i < functions.size(); i++) {
+        double v = (*functions[i])(x);
+        if (v != 0 && v > maxf) maxf = v;
+    }
+
+    double delta_ok = -maxf;
+    return fabs(delta_ok - delta) < EPS;
 }
 
 
 std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
 
-    while ()
+    int num = 0;
 
+    while (check_out_conditions(x0) || num > MAX_ITER) {
+        std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
-    std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
+        std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
 
-    std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
+        int j = 0;
+        for(auto const& i: nearly_to_active_cond_set) {
+            gradients[j] = (*(functions[i])).gradient_autodiff_lib(x0);
+            j++;
+        }
 
-    int j = 0;
-    for(auto const& i: nearly_to_active_cond_set) {
-        gradients[j] = (*(functions[i])).gradient_autodiff_lib(x0);
-        j++;
+        std::vector<double> possible_dir(x0.size());
+        double eng_out = 0.0;
+        solve_subproblem(possible_dir, eng_out, gradients, A);
+        eng = eng_out;
+        if (eng < -delta) {
+            double new_alpha = calc_new_alpha(x0, possible_dir, nearly_to_active_cond_set);
+            for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
+        }else {
+            delta *= lambda;
+        }
+        num++;
     }
 
-    std::vector<double> possible_dir(x0.size());
-    double eng_out = 0.0;
-    solve_subproblem(possible_dir, eng_out, gradients, A);
-    eng = eng_out;
-    if (eng < -delta) {
-        double new_alpha = calc_new_alpha(x0, possible_dir, nearly_to_active_cond_set);
-        for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
-    }else {
+    if (num > MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
+    return x0;
+}
+
+
+std::vector<double> AvailDirs::calc_fist_approx() {
+
+    std::vector<double> x0 = solveUnderdeterminedEigen();
+    int num = 0;
+    double temp_delta = delta;
+    is_first_approx = true;
+
+    while (eng >= 0 || num > MAX_ITER) {
+        std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
+
+        std::vector<std::vector<double>> gradients(functions.size(), std::vector<double>(nearly_to_active_cond_set.size(), 0));
+
+        int j = 0;
+        for(auto const& i: nearly_to_active_cond_set) {
+            gradients[j] = (*(functions[i])).gradient_autodiff_lib(x0);
+            j++;
+        }
+
+        std::vector<double> possible_dir(x0.size());
+        double eng_out = 0.0;
+        solve_subproblem(possible_dir, eng_out, gradients, A);
+        eng = eng_out;
+
         delta *= lambda;
+        num++;
     }
 
+    delta = temp_delta;
+    is_first_approx = false;
+
+
+    if (num > MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
+    return x0;
+}
+
+
+
+std::vector<double> AvailDirs::solve_problem() {
+
+    std::vector<double> fist_approx = calc_fist_approx();
+    return solv_dirs_method(fist_approx);
 }
 
 
@@ -197,12 +242,14 @@ bool AvailDirs::load_problem(Functions functions, Matrix const &A, std::vector<d
     return true;
 }
 
+
 bool AvailDirs::check_problem() {
     return true;
 }
 
 AvailDirs::AvailDirs() {
     is_problem_exists = false;
+    is_first_approx = false;
 }
 
 void AvailDirs::calc_columns_clp_simplex(ColSet &columns,

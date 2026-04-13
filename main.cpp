@@ -3,13 +3,16 @@
 #include <vector>
 #include <Eigen/Dense>
 #include "AvailDirs.h"
-#include "task.h"
+// #include "task.h"
+#include "task2.h"
+#include "task2.h"
 
 using namespace autodiff;
 
 
 int main() {
-    start();
+    // start2();
+    start2();
 }
 
 

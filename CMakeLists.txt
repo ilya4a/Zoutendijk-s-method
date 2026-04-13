@@ -16,7 +16,8 @@ find_package(autodiff REQUIRED)
 
 # --- Исполняемый файл ---
 add_executable(ZoitendijkMethod main.cpp AvailDirs.cpp AvailDirs.h diff.h
-        task.h)
+        task.h
+        task2.h)
 
 target_include_directories(ZoitendijkMethod PRIVATE
         ${EIGEN_INCLUDE_DIR}

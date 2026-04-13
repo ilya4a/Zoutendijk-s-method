@@ -94,6 +94,7 @@ bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
 std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
 
     int num = 0;
+    std::cout << "k" << "          x        " << "delta" << "    " << "n" << "     " << "phi_0" << std::endl;
 
     while (!check_out_conditions(x0) && num < MAX_ITER ) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
@@ -123,6 +124,14 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
             delta *= lambda;
         }
         num++;
+
+        std::cout << num << " (";
+        std::cout << num;
+        for(auto &i: x0) std::cout << i << " ";
+        std::cout << ")";
+
+        std::cout << " " <<delta << " " << eng << " " << (*functions[0])(x0) << std::endl;
+
     }
 
     std::cout << "Число итераций: " << num << std::endl;
@@ -173,9 +182,9 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 
         std::vector<double> possible_dir(x0.size());
         double eng_out = 777;
-        solve_subproblem(possible_dir, eng_out, gradients, A);
+        solve_subproblem(possible_dir, eng, gradients, A);
 
-        eng = eng_out;
+        // eng = eng_out;
 
         if (eng < -delta) {
             double new_alpha = calc_new_alpha(x0, possible_dir); // отдельная функция для поиска шага
@@ -186,11 +195,12 @@ std::vector<double> AvailDirs::calc_fist_approx() {
             delta *= lambda;
         }
         num++;
+
+        std::cout << num << " " << delta << " " << eng << " " << (*functions[0])(x0) << std::endl;
     }
 
     delta = temp_delta;
     is_first_approx = false;
-    // delta = 1e-1; // а оно тут нада?
 
     if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::fist_approx()" << std::endl;
     return x0;

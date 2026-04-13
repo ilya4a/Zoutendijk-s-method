@@ -55,15 +55,16 @@ class AvailDirs {
     // bool check_func_conditions(std::vector<double> const& x, double& min_f_x);
     std::vector<double> solveUnderdeterminedEigen();
 
-    std::vector<int> get_delta_conditions(std::vector<double> const& x, bool include_target);
+    std::vector<int> get_delta_conditions(std::vector<double> const& x);
 
     double calc_new_alpha(std::vector<double> const &x,
-        std::vector<double> const &s,
-        std::vector<int> const&nearly_to_active_cond_set);
+        std::vector<double> const &s);
 
     bool check_out_conditions(std::vector<double> const& x);
 
     std::vector<double> solv_dirs_method(std::vector<double>& x0);
+
+    double calc_new_alpha_fist_approx(const std::vector<double> &x, const std::vector<double> &s);
 
     std::vector<double> calc_fist_approx();
 

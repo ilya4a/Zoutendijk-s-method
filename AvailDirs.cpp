@@ -12,7 +12,6 @@ void print_vector(std::vector<T> const& v, std::string const& m) {
     std::cout << std::endl;
 }
 
-
 std::vector<double> AvailDirs::solveUnderdeterminedEigen() {
     int m = A.size();          // число уравнений
     int n = m > 0 ? A[0].size() : 0; // число переменных
@@ -53,60 +52,42 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
 
 
 
-double AvailDirs::calc_new_alpha(std::vector<double> const &x,
-    std::vector<double> const &s
-    )
-{
-    double new_alpha = alpha;
-    for (int k = 1; k < MAX_POW; k++) {
-        std::vector<double> x_new(x.size());
-
-        for (int i = 0; i < x.size(); i++) {x_new[i] = x[i] + new_alpha * s[i];}
-
-        if ((*functions[0])(x_new) <= (*functions[0])(x) + 0.5*eng*new_alpha) {
-
-            bool success = true;
-            for (int i = 1; i < functions.size(); i++) {
-                if ((*functions[i])(x_new) >= EPS) {
-                    success = false;
-                    break;
-                }
-            }
-            if (success){ return new_alpha;}
-            else {new_alpha *= lambda; }
-        }
-    }
-
-    return new_alpha;
-}
-
-double AvailDirs::calc_new_alpha_fist_approx(const std::vector<double>& x,
-                                             const std::vector<double>& s) {
-    double new_alpha = alpha;
+double AvailDirs::calc_new_alpha(std::vector<double> const &x, std::vector<double> const &s) {
+    double new_alpha = 1.0;   // начинаем с 1, а не с alpha (0.5)
     for (int k = 1; k < MAX_POW; ++k) {
         std::vector<double> x_new(x.size());
-        for (size_t i = 0; i < x.size(); ++i) x_new[i] = x[i] + new_alpha * s[i];
-        bool success = true;
+        for (int i = 0; i < x.size(); ++i) x_new[i] = x[i] + new_alpha * s[i];
+
+        bool feasible = true;
         for (int i = 1; i < functions.size(); ++i) {
-            if ((*functions[i])(x_new) > EPS) { success = false; break; }
+            if ((*functions[i])(x_new) > EPS) {
+                feasible = false;
+                break;
+            }
         }
-        if (success) return new_alpha;
+        if (!feasible) {
+            new_alpha *= lambda;
+            continue;
+        }
+        // Проверка условия Армихо
+        if ((*functions[0])(x_new) <= (*functions[0])(x) + 0.5 * eng * new_alpha) {
+            return new_alpha;
+        }
         new_alpha *= lambda;
     }
     return new_alpha;
 }
 
 
-bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
 
-    double maxf = std::numeric_limits<double>::lowest();
-    for (int i = 1; i < functions.size(); i++) {
+bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
+    double maxf = -std::numeric_limits<double>::infinity();
+    for (int i = 1; i < functions.size(); ++i) {
         double v = (*functions[i])(x);
-        if (fabs(v) < EPS && v > maxf) maxf = v;
+        if (v > maxf) maxf = v;
     }
 
-    double delta_ok = -maxf;
-    return fabs(delta_ok - delta) < EPS;
+    return fabs(maxf - delta) <= EPS;
 }
 
 
@@ -114,10 +95,9 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
 
     int num = 0;
 
-    while (check_out_conditions(x0) && num < MAX_ITER) {
+    while (!check_out_conditions(x0) && num < MAX_ITER ) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
 
-        print_vector(nearly_to_active_cond_set, "nearly_calc");
 
         std::vector<std::vector<double>> gradients(nearly_to_active_cond_set.size() + 1, std::vector<double>(nearly_to_active_cond_set.size(), 0));
 
@@ -136,14 +116,19 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
             double new_alpha = calc_new_alpha(x0, possible_dir);
             for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
         }else {
+            if (delta < EPS) {
+                break;
+            }
+            // иногда это условие помогает избежать зацикливания, иногда прерывает слишком рано
+            // одна из больших проблем - не правильно работает условие выхода из этого цикла
             delta *= lambda;
         }
         num++;
     }
 
-    std::cout << "NUM: " << num << std::endl;
+    std::cout << "NUM ITERATIONS: " << num << std::endl;
 
-    if (num > MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
+    if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::fist_approx()" << std::endl;
     return x0;
 }
 
@@ -159,7 +144,7 @@ std::vector<double> AvailDirs::calc_fist_approx() {
         }
     }
     if (feasible) {
-        eng = 0.0;               // Значение вспомогательной цели
+        eng = 0.0;
         is_first_approx = false;
         std::cout << "Initial point is feasible, no phase I needed.\n";
         return x0;
@@ -186,8 +171,8 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 
         eng = eng_out;
 
-        if (eng < -delta) {   // нашли улучшающее направление
-            double new_alpha = calc_new_alpha_fist_approx(x0, possible_dir); // отдельная функция для поиска шага
+        if (eng < -delta) {
+            double new_alpha = calc_new_alpha(x0, possible_dir); // отдельная функция для поиска шага
             for (int i = 0; i < x0.size(); ++i) {
                 x0[i] += new_alpha * possible_dir[i];
             }
@@ -199,12 +184,11 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 
     delta = temp_delta;
     is_first_approx = false;
+    // delta = 1e-1; // а оно тут нада?
 
-
-    if (num >= MAX_ITER) std::cerr << "bad in AvailDirs::fist_approx()" << std::endl;
+    if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::fist_approx()" << std::endl;
     return x0;
 }
-
 
 
 std::vector<double> AvailDirs::solve_problem() {
@@ -221,7 +205,6 @@ std::vector<double> AvailDirs::solve_problem() {
 
     return solv_dirs_method(fist_approx);
 }
-
 
 bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
                                  double &eng_out,
@@ -284,32 +267,33 @@ bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
             rowUpper[idx] = 0.0;   // A_k * s = 0
         }
 
-        // Создание и решение модели
-        ClpSimplex model;
-        model.loadProblem(num_vars, num_rows,
-                          start.data(), index.data(), value.data(), length.data(),
-                          colLower.data(), colUpper.data(),
-                          objective.data(),
-                          rowLower.data(), rowUpper.data());
+//         // Создание и решение модели
+         ClpSimplex model;
+         model.loadProblem(num_vars, num_rows,
+                           start.data(), index.data(), value.data(), length.data(),
+                           colLower.data(), colUpper.data(),
+                           objective.data(),
+                           rowLower.data(), rowUpper.data());
 
-        model.primal();
+        model.setLogLevel(0);
+         model.primal();
 
-        // std::cerr << "CLP status = " << model.status()
-        //   << ", secondary = " << model.secondaryStatus() << std::endl;
-
-
-        if (model.status() != 0) {
-            std::cerr << "CLP error: status = " << model.status() << std::endl;
-            return false;
-        }
-
-        const double* sol = model.primalColumnSolution();
-        s_out.resize(n);
-        for (int j = 0; j < n; ++j) s_out[j] = sol[j];
-        eng_out = sol[n];
+         // std::cerr << "CLP status = " << model.status()
+         //   << ", secondary = " << model.secondaryStatus() << std::endl;
 
 
-        return true;
+         if (model.status() != 0) {
+             std::cerr << "CLP error: status = " << model.status() << std::endl;
+             return false;
+         }
+
+         const double* sol = model.primalColumnSolution();
+         s_out.resize(n);
+         for (int j = 0; j < n; ++j) s_out[j] = sol[j];
+         eng_out = sol[n];
+
+
+         return true;
     }
 
 bool AvailDirs::load_problem(Functions functions, Matrix const &A, std::vector<double> b) {

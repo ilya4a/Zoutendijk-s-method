@@ -21,6 +21,8 @@ class AvailDirs {
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
     const double EPS = 1e-3;
+    const double FEAS_TOL = 1e-6;
+    const double DIR_TOL  = 1e-6;
 
     Functions functions;
     Matrix A;
@@ -65,6 +67,7 @@ class AvailDirs {
     std::vector<double> solv_dirs_method(std::vector<double>& x0);
 
     double calc_new_alpha_fist_approx(const std::vector<double> &x, const std::vector<double> &s);
+
 
     std::vector<double> calc_fist_approx();
 

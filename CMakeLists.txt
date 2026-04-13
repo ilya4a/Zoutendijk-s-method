@@ -15,7 +15,8 @@ pkg_check_modules(CLP REQUIRED clp)
 find_package(autodiff REQUIRED)
 
 # --- Исполняемый файл ---
-add_executable(ZoitendijkMethod main.cpp AvailDirs.cpp AvailDirs.h diff.h)
+add_executable(ZoitendijkMethod main.cpp AvailDirs.cpp AvailDirs.h diff.h
+        task.h)
 
 target_include_directories(ZoitendijkMethod PRIVATE
         ${EIGEN_INCLUDE_DIR}

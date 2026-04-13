@@ -112,6 +112,7 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
         double eng_out = 0.0;
         solve_subproblem(possible_dir, eng_out, gradients, A);
         eng = eng_out;
+        // std::cout << "eng: " << eng << std::endl;
         if (eng < -delta) {
             double new_alpha = calc_new_alpha(x0, possible_dir);
             for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
@@ -119,16 +120,21 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
             if (delta < EPS) {
                 break;
             }
-            // иногда это условие помогает избежать зацикливания, иногда прерывает слишком рано
-            // одна из больших проблем - не правильно работает условие выхода из этого цикла
             delta *= lambda;
         }
         num++;
     }
 
-    std::cout << "NUM ITERATIONS: " << num << std::endl;
+    std::cout << "Число итераций: " << num << std::endl;
+    if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::solv_dirs()" << std::endl;
+    std::cout << "delta final: " << delta << std::endl;
 
-    if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::fist_approx()" << std::endl;
+    int j = 0;
+    for (auto const&i: functions) {
+        std::cout << "f" << j << " = " << (*i)(x0) << std::endl;
+        j++;
+    }
+
     return x0;
 }
 
@@ -146,7 +152,7 @@ std::vector<double> AvailDirs::calc_fist_approx() {
     if (feasible) {
         eng = 0.0;
         is_first_approx = false;
-        std::cout << "Initial point is feasible, no phase I needed.\n";
+        // std::cout << "Initial point is feasible, no phase I needed.\n";
         return x0;
     }
 
@@ -193,15 +199,11 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 
 std::vector<double> AvailDirs::solve_problem() {
 
-
     std::vector<double> fist_approx = calc_fist_approx();
 
-    std::cout << "first approx: ";
-    for (auto& i : fist_approx) std::cout << i << " ";
-    std::cout << std::endl;
-
-
-    std::cout << "eng: " <<  eng <<  std::endl;
+    // std::cout << "first approx: ";
+    // for (auto& i : fist_approx) std::cout << i << " ";
+    // std::cout << std::endl;
 
     return solv_dirs_method(fist_approx);
 }

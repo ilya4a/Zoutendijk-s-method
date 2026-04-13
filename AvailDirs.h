@@ -21,8 +21,8 @@ class AvailDirs {
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
     const double EPS = 1e-3;
-    const double FEAS_TOL = 1e-6;
-    const double DIR_TOL  = 1e-6;
+    // const double FEAS_TOL = 1e-6;
+    // const double DIR_TOL  = 1e-6;
 
     Functions functions;
     Matrix A;

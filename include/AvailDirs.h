@@ -5,10 +5,9 @@
 #ifndef ZOITENDIJKMETHOD_AVAILDIRS_H
 #define ZOITENDIJKMETHOD_AVAILDIRS_H
 
-#include "ClpSimplex.hpp"
+
 #include <iostream>
 #include <vector>
-#include <cmath>
 #include <memory>
 
 #include "diff.h"
@@ -21,8 +20,6 @@ class AvailDirs {
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
     const double EPS = 1e-3;
-    // const double FEAS_TOL = 1e-6;
-    // const double DIR_TOL  = 1e-6;
 
     Functions functions;
     Matrix A;
@@ -52,9 +49,6 @@ class AvailDirs {
         );
 
 
-    bool check_problem();
-
-    // bool check_func_conditions(std::vector<double> const& x, double& min_f_x);
     std::vector<double> solveUnderdeterminedEigen();
 
     std::vector<int> get_delta_conditions(std::vector<double> const& x);
@@ -75,10 +69,8 @@ public:
 
     AvailDirs();
 
-    // func[0] - target, func[1...] - restrictions
     bool load_problem(Functions functions, Matrix const& A, std::vector<double> b);
     std::vector<double> solve_problem();
-
 };
 
 

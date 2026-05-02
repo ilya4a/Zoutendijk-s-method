@@ -32,7 +32,6 @@ public:
             return this->f(v);
         };
         Eigen::VectorXd grad = gradient(func_lambda, wrt(x_ad), at(x_ad));
-        // Eigen::VectorXd grad = gradient(*this, autodiff::wrt(x_ad), autodiff::at(x_ad)); // низя из-за абстрактного класса
 
         return {grad.data(), grad.data() + grad.size()};
     }

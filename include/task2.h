@@ -2,11 +2,13 @@
 // Created by ilya on 4/13/26.
 //
 
-#ifndef ZOITENDIJKMETHOD_TASK_H
-#define ZOITENDIJKMETHOD_TASK_H
+#ifndef ZOITENDIJKMETHOD_TASK2_H
+#define ZOITENDIJKMETHOD_TASK2_H
+
 #include <memory>
 #include <autodiff/forward/real/eigen.hpp>
 
+#include "AvailDirs.h"
 #include "diff.h"
 
 using namespace autodiff;
@@ -21,7 +23,7 @@ void print_vector(std::vector<T> const& v, std::string const& m) {
 class Target : public FuncWrap {
 public:
     real f(const VectorXreal& v) const override {
-        return 3*v(0) * v(0) + 2*v(1) * v(1) -4*v(0)*v(1) +5*v(0) + 2*v(2)*v(2) + sin(v(2)) + v(3);// + exp(0.1*v(3));
+        return v(0)*v(0) + v(1)*v(1) + 2*v(0) * v(1) + exp(v(0)+v(1));
     }
 };
 
@@ -29,27 +31,13 @@ public:
 class Cond1 : public FuncWrap {
 public:
     real f(const VectorXreal& v) const override {
-        return v(0) * v(0) + v(1) * v(1) + v(2) * v(2) - 4;
-    }
-};
-
-class Cond2 : public FuncWrap {
-public:
-    real f(const VectorXreal& v) const override {
-        return v(0) +  2*v(1) - v(2) - 2;
+        return v(0) * v(0) + v(1) * v(1) - 100;
     }
 };
 
 
-class Cond3 : public FuncWrap {
-public:
-    real f(const VectorXreal& v) const override {
-        return -v(1) + 3*v(3) - 5;
-    }
-};
 
-
-int start() {
+int start2() {
     using Matrix = std::vector<std::vector<double>>;
 
     AvailDirs solver;
@@ -57,11 +45,8 @@ int start() {
     std::vector<std::unique_ptr<FuncWrap>> functions;
     functions.push_back(std::make_unique<Target>());
     functions.push_back(std::make_unique<Cond1>());
-    functions.push_back(std::make_unique<Cond2>());
-    functions.push_back(std::make_unique<Cond3>());
-
     Matrix A = {
-        {1.0, 1.0, 1.0, 1.0}
+        {1.0, 1.0}
     };
     std::vector<double> b = {3.0};
 
@@ -79,5 +64,4 @@ int start() {
 }
 
 
-
-#endif //ZOITENDIJKMETHOD_TASK_H
+#endif //ZOITENDIJKMETHOD_TASK2_H

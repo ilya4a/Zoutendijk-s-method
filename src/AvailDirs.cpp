@@ -4,6 +4,40 @@
 
 #include "AvailDirs.h"
 
+#include <iostream>
+#include <iomanip>
+#include <vector>
+
+#include "ClpSimplex.hpp"
+
+
+void print_iteration_header() {
+    std::cout << std::setw(3)  << "k"
+              << "  " << std::setw(20) << "x"
+              << " "  << std::setw(10) << "delta"
+              << " "  << std::setw(10) << "eng"
+              << " "  << std::setw(10) << "phi_0"
+              << std::endl;
+}
+
+void print_iteration(int k,
+                     const std::vector<double>& x,
+                     double delta,
+                     double eng,
+                     double phi0)
+{
+    std::cout << std::setw(3) << k << "  ";
+    std::cout << "(";
+    for (size_t i = 0; i < x.size(); ++i) {
+        std::cout << std::setw(8) << std::fixed << std::setprecision(4) << x[i];
+        if (i != x.size() - 1) std::cout << ", ";
+    }
+    std::cout << ")";
+    std::cout << " " << std::setw(10) << std::fixed << std::setprecision(4) << delta
+              << " " << std::setw(10) << std::fixed << std::setprecision(4) << eng
+              << " " << std::setw(10) << std::fixed << std::setprecision(4) << phi0
+              << std::endl;
+}
 
 template<typename T>
 void print_vector(std::vector<T> const& v, std::string const& m) {
@@ -13,8 +47,8 @@ void print_vector(std::vector<T> const& v, std::string const& m) {
 }
 
 std::vector<double> AvailDirs::solveUnderdeterminedEigen() {
-    int m = A.size();          // число уравнений
-    int n = m > 0 ? A[0].size() : 0; // число переменных
+    int m = A.size();
+    int n = m > 0 ? A[0].size() : 0;
 
     Eigen::MatrixXd A_eigen(m, n);
     for (int i = 0; i < m; ++i)
@@ -23,7 +57,6 @@ std::vector<double> AvailDirs::solveUnderdeterminedEigen() {
 
     Eigen::VectorXd b_eigen = Eigen::Map<const Eigen::VectorXd>(b.data(), m);
 
-    // Решаем (для недоопределённой системы даёт решение минимальной нормы)
     Eigen::VectorXd x = A_eigen.completeOrthogonalDecomposition().solve(b_eigen);
 
     return {x.data(), x.data() + n};
@@ -41,7 +74,7 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
 
         double v = (*functions[i])(x) - fistappr;
         if (is_first_approx) {
-            if (-delta <= v) {res.push_back(i);}  // ТАК КАК f_i(x) <= 0 не обязаны выполняться при каком-то Ax0 = b
+            if (-delta <= v) {res.push_back(i);}
         }else {
             if (-delta <= v && v <= 0) {res.push_back(i);}
 
@@ -53,7 +86,7 @@ std::vector<int> AvailDirs::get_delta_conditions(std::vector<double> const &x) {
 
 
 double AvailDirs::calc_new_alpha(std::vector<double> const &x, std::vector<double> const &s) {
-    double new_alpha = 1.0;   // начинаем с 1, а не с alpha (0.5)
+    double new_alpha = 1.0;
     for (int k = 1; k < MAX_POW; ++k) {
         std::vector<double> x_new(x.size());
         for (int i = 0; i < x.size(); ++i) x_new[i] = x[i] + new_alpha * s[i];
@@ -69,7 +102,7 @@ double AvailDirs::calc_new_alpha(std::vector<double> const &x, std::vector<doubl
             new_alpha *= lambda;
             continue;
         }
-        // Проверка условия Армихо
+
         if ((*functions[0])(x_new) <= (*functions[0])(x) + 0.5 * eng * new_alpha) {
             return new_alpha;
         }
@@ -91,10 +124,11 @@ bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
 }
 
 
+
 std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
 
     int num = 0;
-    std::cout << "k" << "          x        " << "delta" << "    " << "n" << "     " << "phi_0" << std::endl;
+    print_iteration(num, x0, delta, eng, (*functions[0])(x0));
 
     while (!check_out_conditions(x0) && num < MAX_ITER ) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
@@ -113,7 +147,7 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
         double eng_out = 0.0;
         solve_subproblem(possible_dir, eng_out, gradients, A);
         eng = eng_out;
-        // std::cout << "eng: " << eng << std::endl;
+
         if (eng < -delta) {
             double new_alpha = calc_new_alpha(x0, possible_dir);
             for (int i = 0; i < x0.size(); i++){x0[i] += new_alpha * possible_dir[i];}
@@ -124,14 +158,7 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
             delta *= lambda;
         }
         num++;
-
-        std::cout << num << " (";
-        std::cout << num;
-        for(auto &i: x0) std::cout << i << " ";
-        std::cout << ")";
-
-        std::cout << " " <<delta << " " << eng << " " << (*functions[0])(x0) << std::endl;
-
+        print_iteration(num, x0, delta, eng, (*functions[0])(x0));
     }
 
     std::cout << "Число итераций: " << num << std::endl;
@@ -161,7 +188,6 @@ std::vector<double> AvailDirs::calc_fist_approx() {
     if (feasible) {
         eng = 0.0;
         is_first_approx = false;
-        // std::cout << "Initial point is feasible, no phase I needed.\n";
         return x0;
     }
 
@@ -184,10 +210,8 @@ std::vector<double> AvailDirs::calc_fist_approx() {
         double eng_out = 777;
         solve_subproblem(possible_dir, eng, gradients, A);
 
-        // eng = eng_out;
-
         if (eng < -delta) {
-            double new_alpha = calc_new_alpha(x0, possible_dir); // отдельная функция для поиска шага
+            double new_alpha = calc_new_alpha(x0, possible_dir);
             for (int i = 0; i < x0.size(); ++i) {
                 x0[i] += new_alpha * possible_dir[i];
             }
@@ -211,10 +235,6 @@ std::vector<double> AvailDirs::solve_problem() {
 
     std::vector<double> fist_approx = calc_fist_approx();
 
-    // std::cout << "first approx: ";
-    // for (auto& i : fist_approx) std::cout << i << " ";
-    // std::cout << std::endl;
-
     return solv_dirs_method(fist_approx);
 }
 
@@ -229,17 +249,12 @@ bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
 
         int n_ineq = gradients.size();
         int n_eq   = A_eq.size();
-        int num_vars = n + 1;          // s1..sn, eng
+        int num_vars = n + 1;
         int num_rows = n_ineq + n_eq;
 
-    //std::cerr << "n_ineq = " << n_ineq << ", n_eq = " << n_eq
-    //      << ", n = " << n << std::endl;
-
-    // Сбор разреженной матрицы по столбцам
         ColSet columns(num_vars);
         calc_columns_clp_simplex(columns, gradients, A_eq, n, n_ineq, n_eq);
 
-        // Формирование массивов CLP
         std::vector<int> start(num_vars + 1, 0);
         std::vector<int> index;
         std::vector<double> value;
@@ -251,35 +266,30 @@ bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
             for (const auto& p : columns[j]) {
                 index.push_back(p.first);
                 value.push_back(p.second);
-                // ограничение с весом value располагается в index строчке ограничений
-                ++nnz;  // первая позиция начала ограничений для другой переменной
+                ++nnz;
             }
         }
         start[num_vars] = nnz;
 
-        // Границы переменных
         std::vector<double> colLower(num_vars, -1);
         std::vector<double> colUpper(num_vars,  1);
         colLower[n] = -COIN_DBL_MAX;
         colUpper[n] = COIN_DBL_MAX;
 
-        // Целевая функция
         std::vector<double> objective(num_vars, 0.0);
-        objective[n] = 1.0;   // минимизируем beta
+        objective[n] = 1.0;
 
-        // Границы строк (ограничений)
         std::vector<double> rowLower(num_rows, -COIN_DBL_MAX);
         std::vector<double> rowUpper(num_rows,  COIN_DBL_MAX);
         for (int i = 0; i < n_ineq; ++i) {
-            rowUpper[i] = 0.0;   // grad_i * s - beta <= 0
+            rowUpper[i] = 0.0;
         }
         for (int k = 0; k < n_eq; ++k) {
             int idx = n_ineq + k;
             rowLower[idx] = 0.0;
-            rowUpper[idx] = 0.0;   // A_k * s = 0
+            rowUpper[idx] = 0.0;
         }
 
-//         // Создание и решение модели
          ClpSimplex model;
          model.loadProblem(num_vars, num_rows,
                            start.data(), index.data(), value.data(), length.data(),
@@ -289,10 +299,6 @@ bool AvailDirs::solve_subproblem(std::vector<double> &s_out,
 
         model.setLogLevel(0);
          model.primal();
-
-         // std::cerr << "CLP status = " << model.status()
-         //   << ", secondary = " << model.secondaryStatus() << std::endl;
-
 
          if (model.status() != 0) {
              std::cerr << "CLP error: status = " << model.status() << std::endl;
@@ -312,15 +318,11 @@ bool AvailDirs::load_problem(Functions functions, Matrix const &A, std::vector<d
     this->functions = std::move(functions);
     this->A = A;
     this->b = b;
-    if (!check_problem()) return false;
     is_problem_exists = true;
     return true;
 }
 
 
-bool AvailDirs::check_problem() {
-    return true;
-}
 
 AvailDirs::AvailDirs() {
     is_problem_exists = false;
@@ -338,20 +340,16 @@ void AvailDirs::calc_columns_clp_simplex(ColSet &columns,
                                          const int n,
                                          const int n_ineq,
                                          const int n_eq)  {
-    // Неравенства (строки 0..n_ineq-1)
     for (int i = 0; i < n_ineq; ++i) {
         const auto& grad = gradients[i];
         for (int j = 0; j < n; ++j) {
             if (std::fabs(grad[j]) > 1e-12) {
                 columns[j].emplace_back(i, grad[j]);
-                // чтобы не записывать нули в колумс, вставляем индекс где встречается этот не нулевой элемент
             }
         }
-        // beta участвует во всех неравенствах с коэффициентом -1
         columns[n].emplace_back(i, -1.0);
     }
 
-    // Равенства (строки n_ineq .. n_ineq+n_eq-1)
     for (int k = 0; k < n_eq; ++k) {
         const auto& row = A_eq[k];
         int row_idx = n_ineq + k;
@@ -360,6 +358,5 @@ void AvailDirs::calc_columns_clp_simplex(ColSet &columns,
                 columns[j].emplace_back(row_idx, row[j]);
             }
         }
-        // eng не входит в равенства
     }
 }

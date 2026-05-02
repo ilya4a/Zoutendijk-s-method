@@ -29,40 +29,83 @@ cmake --build build
 
 We consider the constrained optimization problem
 
-\[
+$$
 \min \varphi_0(x), \qquad x \in S,
-\]
+$$
 
 where
 
-\[
+$$
 S = \{x \in \mathbb{R}^n \mid \varphi_i(x) \le 0,\ i=1,\dots,m,\ Ax=b\},
-\]
+$$
 
-\(A \in \mathbb{R}^{l \times n}\), \(l < n\), and \(b \in \mathbb{R}^l\).
+$$
+A \in \mathbb{R}^{l \times n}, l < n, and b \in \mathbb{R}^l
+$$
 
 The method is applied under the standard assumptions of compact feasibility, Slater’s condition, convexity and smoothness of the objective and constraints, and bounded/Lipschitz gradients.
 
-## 2.1.4 Algorithm Description
 
-The Zoutendijk feasible directions method solves the original nonlinear constrained problem iteratively by constructing a descent direction at each step.
 
-At iteration \(k\), an auxiliary linear programming problem is solved to find a feasible direction \(s_k\) and a value \(\eta_k\):
+## Algorithm Description
 
-- the gradient of the objective and the gradients of the nearly active constraints are included;
-- equality constraints are enforced by \(As = 0\);
-- the direction is bounded component-wise, which makes the auxiliary problem linear.
+At each iteration, the method works with the set of nearly active constraints
 
-This auxiliary problem is solved with the simplex method from an external library. In this project, the simplex solver is used only for the inner linear subproblem, while the nonlinear gradients are obtained automatically.
+$$
+J_\delta(x) = \{\, i \in \{1,\dots,m\} \mid -\delta \le \varphi_i(x) \le 0 \,\}.
+$$
 
+Only the constraints from this set are used in the linearized auxiliary problem.
+
+To find a feasible descent direction \(s_k\), the following auxiliary linear programming problem is solved:
+
+$$
+\min \eta
+$$
+
+subject to
+
+$$
+\nabla \varphi_0(x_k)^T s \le \xi_0 \eta,
+$$
+
+$$
+\nabla \varphi_i(x_k)^T s \le \xi_i \eta, \qquad i \in J_{\delta_k}(x_k),
+$$
+
+$$
+A s = 0,
+$$
+
+$$
+-1 \le s^{(j)} \le 1, \qquad j = 1,\dots,n.
+$$
+
+Here $\xi_0,\xi_1,\dots,\xi_m > 0$ are weighting coefficients (they are needed for special problems and can be taken as 1), and the bound on \(s\) makes the subproblem a standard linear program. In this project, it is solved using an external simplex solver.
+
+The main update step accepts the direction only if it provides sufficient decrease and preserves feasibility; otherwise, the parameter $\delta_k$ is reduced.
+
+A key feature of the method is that it uses only the nearly active constraints $J_\delta(x)$, which makes it effective even for problems with a large number of nonlinear constraints.
 ### Initial approximation
 
-The starting point \(x_0\) is built from a separate feasibility-type auxiliary problem. If the initial point is not feasible, the algorithm first drives it into the feasible region and only then proceeds with the main optimization loop.
+The starting point $x_0$ is built from a separate feasibility-type auxiliary problem. If the initial point is not feasible, the algorithm first drives it into the feasible region and only then proceeds with the main optimization loop.
+
+The initial feasible point is obtained from the auxiliary problem
+
+$$
+\min \eta
+$$
+
+subject to
+
+$$
+\varphi_i(x)\le \eta,\qquad i=1,\dots,m,
+$$
+
+$$
+Ax=b.
+$$
 
 ### Step update
 
-If the computed value \(\eta_k\) is sufficiently negative, the method moves in the direction \(s_k\) with a step length chosen by backtracking. The step is accepted only if the objective decreases and all constraints remain satisfied. Otherwise, the threshold parameter \(\delta_k\) is reduced.
-
-### Main feature
-
-A key advantage of the method is that it works with the set of nearly active constraints \(J_\delta(x)\). Because of this, it remains effective even when the problem contains many nonlinear constraints: at each iteration only the constraints close to being active are used in the auxiliary subproblem, which keeps the linearized problem compact and tractable.
+If the computed value $\eta_k$ is sufficiently negative, the method moves in the direction \(s_k\) with a step length chosen by backtracking. The step is accepted only if the objective decreases and all constraints remain satisfied. Otherwise, the threshold parameter $\delta_k$ is reduced.

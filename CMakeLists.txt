@@ -1,30 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
-project(ZoitendijkMethod)
-
+project(ZoitendijkMethod
+        VERSION 1.0.0
+        LANGUAGES CXX
+)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(EIGEN_INCLUDE_DIR "/usr/include/eigen3")
+find_package(Eigen3 REQUIRED)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CLP REQUIRED clp)
 
 find_package(autodiff REQUIRED)
 
-add_executable(ZoitendijkMethod
-        src/main.cpp
+add_library(availdirs STATIC
         src/AvailDirs.cpp
 )
 
-target_include_directories(ZoitendijkMethod PRIVATE
+target_include_directories(availdirs PUBLIC
         include
-        ${EIGEN_INCLUDE_DIR}
-        ${CLP_INCLUDE_DIRS}
 )
 
-target_link_libraries(ZoitendijkMethod PRIVATE
+target_link_libraries(availdirs PUBLIC
+        Eigen3::Eigen
         ${CLP_LIBRARIES}
         autodiff::autodiff
 )
 
-target_compile_options(ZoitendijkMethod PRIVATE ${CLP_CFLAGS_OTHER})
+target_include_directories(availdirs SYSTEM PUBLIC
+        ${CLP_INCLUDE_DIRS}
+)
+
+target_compile_options(availdirs PRIVATE ${CLP_CFLAGS_OTHER})
+
+add_executable(run_examples examples/main.cpp)
+target_link_libraries(run_examples PRIVATE availdirs)

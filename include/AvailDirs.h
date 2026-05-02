@@ -58,9 +58,9 @@ class AvailDirs {
 
     bool check_out_conditions(std::vector<double> const& x);
 
-    std::vector<double> solv_dirs_method(std::vector<double>& x0);
+    std::vector<double> solv_dirs_method(std::vector<double>& x0, bool print_intermediate_results);
 
-    double calc_new_alpha_fist_approx(const std::vector<double> &x, const std::vector<double> &s);
+    // double calc_new_alpha_fist_approx(const std::vector<double> &x, const std::vector<double> &s);
 
 
     std::vector<double> calc_fist_approx();
@@ -70,7 +70,7 @@ public:
     AvailDirs();
 
     bool load_problem(Functions functions, Matrix const& A, std::vector<double> b);
-    std::vector<double> solve_problem();
+    std::vector<double> solve_problem(bool print_intermediate_results);
 };
 
 

@@ -1,7 +1,3 @@
-//
-// Created by ilya on 4/9/26.
-//
-
 #include "AvailDirs.h"
 
 #include <iostream>
@@ -9,7 +5,6 @@
 #include <vector>
 
 #include "ClpSimplex.hpp"
-
 
 void print_iteration_header() {
     std::cout << std::setw(3)  << "k"
@@ -125,10 +120,10 @@ bool AvailDirs::check_out_conditions(std::vector<double> const &x) {
 
 
 
-std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
+std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0, bool print_intermediate_results) {
 
     int num = 0;
-    print_iteration(num, x0, delta, eng, (*functions[0])(x0));
+    if (print_intermediate_results) print_iteration(num, x0, delta, eng, (*functions[0])(x0));
 
     while (!check_out_conditions(x0) && num < MAX_ITER ) {
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
@@ -158,17 +153,19 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double>& x0) {
             delta *= lambda;
         }
         num++;
-        print_iteration(num, x0, delta, eng, (*functions[0])(x0));
+
+        if (print_intermediate_results) print_iteration(num, x0, delta, eng, (*functions[0])(x0));
     }
 
-    std::cout << "Число итераций: " << num << std::endl;
-    if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::solv_dirs()" << std::endl;
-    std::cout << "delta final: " << delta << std::endl;
+    if (print_intermediate_results) {
+        if (num >= MAX_ITER) std::cerr << "limit in AvailDirs::solv_dirs()" << std::endl;
+        std::cout << "delta final: " << delta << std::endl;
 
-    int j = 0;
-    for (auto const&i: functions) {
-        std::cout << "f" << j << " = " << (*i)(x0) << std::endl;
-        j++;
+        int j = 0;
+        for (auto const&i: functions) {
+            std::cout << "f" << j << " = " << (*i)(x0) << std::endl;
+            j++;
+        }
     }
 
     return x0;
@@ -231,11 +228,11 @@ std::vector<double> AvailDirs::calc_fist_approx() {
 }
 
 
-std::vector<double> AvailDirs::solve_problem() {
+std::vector<double> AvailDirs::solve_problem(bool print_intermediate_results) {
 
     std::vector<double> fist_approx = calc_fist_approx();
 
-    return solv_dirs_method(fist_approx);
+    return solv_dirs_method(fist_approx, print_intermediate_results);
 }
 
 bool AvailDirs::solve_subproblem(std::vector<double> &s_out,

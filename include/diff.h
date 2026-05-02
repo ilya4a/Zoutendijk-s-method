@@ -1,13 +1,10 @@
-// diff.h
 #ifndef ZOITENDIJKMETHOD_DIFF_H
 #define ZOITENDIJKMETHOD_DIFF_H
 
 #include <autodiff/forward/real.hpp>
 #include <autodiff/forward/real/eigen.hpp>
 #include <Eigen/Dense>
-#include <utility>
 #include <vector>
-
 
 
 class FuncWrap {
@@ -38,8 +35,6 @@ public:
 
     virtual ~FuncWrap() {};
 };
-
-
 
 
 #endif //ZOITENDIJKMETHOD_DIFF_H

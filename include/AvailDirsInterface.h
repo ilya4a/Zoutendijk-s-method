@@ -11,7 +11,7 @@ using namespace autodiff;
 #include "AvailDirs.h"
 
 using Matrix = std::vector<std::vector<double>>;
-using Func = std::unique_ptr<FuncWrap>;
+using Func = std::shared_ptr<FuncWrap>;
 
 #define MAKE_FUNC(ClassName, Body)                              \
 class ClassName : public FuncWrap {                          \
@@ -27,10 +27,10 @@ std::vector<double> availdirs_solve(
 ) {
     AvailDirs solver;
     std::vector<Func> functions;
-    functions.push_back(std::make_unique<Target>());
+    functions.push_back(std::make_shared<Target>());
 
     auto add = [&](auto func) { functions.push_back(std::move(func)); };
-    (add(std::make_unique<Constraints>()), ...);
+    (add(std::make_shared<Constraints>()), ...);
 
     if (!solver.load_problem(std::move(functions), A_eq, b_eq)) {
         throw std::runtime_error("AvailDirs: cannot load problem");

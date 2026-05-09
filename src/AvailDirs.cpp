@@ -174,6 +174,19 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> &x0, bool pr
 
     return x0;
 }
+// std::vector<double> AvailDirs::calc_fist_approx(
+//     Functions& functions,
+//     Matrix& A,
+//     std::vector<double>& b,
+//     double alpha,
+//     double lambda
+// ) {
+//
+//     AvailDirs solver;
+//
+//
+//
+// }
 
 std::vector<double> AvailDirs::calc_fist_approx() {
     std::vector<double> x0 = solveUnderdeterminedEigen();

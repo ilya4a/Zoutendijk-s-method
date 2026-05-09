@@ -9,7 +9,7 @@
 class AvailDirs {
     using ColSet = std::vector<std::vector<std::pair<int, double>>>;
     using Matrix = std::vector<std::vector<double>>;
-    using Functions = std::vector<std::unique_ptr<FuncWrap>>;
+    using Functions = std::vector<std::shared_ptr<FuncWrap>>;
 
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
@@ -24,6 +24,7 @@ class AvailDirs {
 
     double alpha;
     double lambda;
+
     double delta;
     double eng;
 
@@ -52,8 +53,15 @@ class AvailDirs {
     bool check_out_conditions(const std::vector<double> &x);
 
     std::vector<double> solv_dirs_method(std::vector<double> &x0, bool print_intermediate_results);
-
     std::vector<double> calc_fist_approx();
+
+    // static std::vector<double> calc_fist_approx(
+    //     Functions &functions,
+    //     Matrix &A,
+    //     std::vector<double> &b,
+    //     double alpha,
+    //     double lambda
+    // );
 
   public:
     AvailDirs();

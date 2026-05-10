@@ -7,10 +7,6 @@
 #include "diff.h"
 
 class AvailDirs {
-    std::vector<double> d;
-
-    double temp_delta = 0;
-
     using ColSet = std::vector<std::vector<std::pair<int, double>>>;
     using Matrix = std::vector<std::vector<double>>;
     using Functions = std::vector<std::shared_ptr<FuncWrap>>;
@@ -58,19 +54,16 @@ class AvailDirs {
 
     std::vector<double> solv_dirs_method(std::vector<double> x0, bool print_intermediate_results, bool is_first_approx);
 
-
-
     static std::vector<double> calc_fist_approx(
-        Functions const& functions,
+        const Functions &functions,
         Matrix A,
-        std::vector<double> b
+        std::vector<double> b,
+        bool print_info
     );
 
-    static size_t get_problem_dim(Matrix const& A);
+    static size_t get_problem_dim(const Matrix &A);
 
-
-    static std::vector<double> solveUnderdeterminedEigen(Matrix& A, std::vector<double> b);
-
+    static std::vector<double> solveUnderdeterminedEigen(Matrix &A, std::vector<double> b);
 
   public:
     AvailDirs();

@@ -6,7 +6,6 @@
 #include <autodiff/forward/real/eigen.hpp>
 #include <vector>
 
-
 class FuncWrap {
   public:
     double operator()(const std::vector<double> &x) const {
@@ -29,19 +28,16 @@ class FuncWrap {
     virtual ~FuncWrap() { };
 };
 
-template<typename F>
-class LambdaFuncWrap : public FuncWrap {
+template<typename F> class LambdaFuncWrap : public FuncWrap {
     F lambda;
-public:
-    explicit LambdaFuncWrap(F f) : lambda(std::move(f)) {}
 
-    autodiff::real f(const autodiff::VectorXreal& v) const override {
-        return lambda(v);
-    }
+  public:
+    explicit LambdaFuncWrap(F f) : lambda(std::move(f)) { }
+
+    autodiff::real f(const autodiff::VectorXreal &v) const override { return lambda(v); }
 };
 
-template<typename F>
-auto make_func_wrap(F&& f) {
+template<typename F> auto make_func_wrap(F &&f) {
     return std::make_shared<LambdaFuncWrap<std::decay_t<F>>>(std::forward<F>(f));
 }
 

@@ -4,35 +4,35 @@
 #include <iostream>
 #include <vector>
 
-#include "ClpSimplex.hpp"
 #include "AvailDirsInterface.h"
+#include "ClpSimplex.hpp"
 
 void print_iteration_header() {
     std::cout << std::setw(3) << "k"
               << " " << std::setw(10) << "delta"
-              << " " << std::setw(10) << "eng"
+              << " " << std::setw(10) << "eta"
               << " " << std::setw(10) << "phi_0"
-              << "  " << std::setw(20) << "x"
-              << std::endl;
+              << "  " << std::setw(20) << "x" << std::endl;
 }
 
 void print_iteration(int k, const std::vector<double> &x, double delta, double eng, double phi0) {
     std::cout << std::setw(3) << k << " ";
 
-    std::cout << std::setw(10) << std::fixed << std::setprecision(4) << delta << " "
-              << std::setw(10) << std::fixed << std::setprecision(4) << eng << " "
-              << std::setw(10) << std::fixed << std::setprecision(4) << phi0 << "  ";
+    std::cout << std::setw(10) << std::fixed << std::setprecision(4) << delta << " " << std::setw(10) << std::fixed
+              << std::setprecision(4) << eng << " " << std::setw(10) << std::fixed << std::setprecision(4) << phi0
+              << "  ";
 
     std::cout << "(";
     for (size_t i = 0; i < x.size(); ++i) {
         std::cout << std::setw(8) << std::fixed << std::setprecision(4) << x[i];
-        if (i != x.size() - 1)
+        if (i != x.size() - 1) {
             std::cout << ", ";
+        }
     }
     std::cout << ")" << std::endl;
 }
 
-std::vector<double> AvailDirs::solveUnderdeterminedEigen(Matrix& A, std::vector<double> b) {
+std::vector<double> AvailDirs::solveUnderdeterminedEigen(Matrix &A, std::vector<double> b) {
     int m = A.size();
     int n = m > 0 ? A[0].size() : 0;
 
@@ -54,7 +54,6 @@ std::vector<int> AvailDirs::get_delta_conditions(const std::vector<double> &x) {
     std::vector<int> res;
 
     for (int i = 1; i < functions.size(); i++) {
-
         double v = (*functions[i])(x);
 
         if (-delta <= v && v <= 0) {
@@ -67,7 +66,6 @@ std::vector<int> AvailDirs::get_delta_conditions(const std::vector<double> &x) {
 double AvailDirs::calc_new_alpha(const std::vector<double> &x, const std::vector<double> &s) {
     double new_alpha = 1.0;
     for (int k = 1; k < MAX_POW; ++k) {
-
         std::vector<double> x_new(x.size());
 
         for (int i = 0; i < x.size(); ++i) {
@@ -95,52 +93,46 @@ double AvailDirs::calc_new_alpha(const std::vector<double> &x, const std::vector
     return -1;
 }
 
-// bool AvailDirs::check_out_conditions(const std::vector<double>& x) {
-//     if (std::fabs(eng) > EPS9) return false;
-//     double maxf = -std::numeric_limits<double>::infinity();
-//     for (int i = 1; i < functions.size(); ++i) {
-//         double v = (*functions[i])(x);
-//         if (v > maxf) maxf = v;
-//     }
-//     std::cout << "maxf: " << maxf << " delta: " << delta << std::endl;
-//
-//     return delta < -maxf;
-// }
-
-bool AvailDirs::check_out_conditions(const std::vector<double>& x) {
-    // return false;
-    // std::cerr << "delta delta: " << temp_delta - delta << std::endl;
-    temp_delta = delta;
-
-    d.push_back(temp_delta - delta);
-
-    if (fabs(eng) > EPS9) return false;
+bool AvailDirs::check_out_conditions(const std::vector<double> &x) {
+    if (fabs(fabs(eng) - EPS) > EPS) {
+        return false;
+    }
 
     double maxf = -std::numeric_limits<double>::infinity();
     for (int i = 1; i < functions.size(); ++i) {
         double v = (*functions[i])(x);
 
-        if (fabs(v) < EPS9) continue;
+        if (fabs(v) < EPS) {
+            continue;
+        }
 
-        if (v > maxf) maxf = v;
+        if (v > maxf) {
+            maxf = v;
+        }
     }
 
     return delta < -maxf + EPS;
 }
 
-
-std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> x0, bool print_intermediate_results, bool is_first_approx) {
-
+std::vector<double> AvailDirs::solv_dirs_method(
+    std::vector<double> x0,
+    bool print_intermediate_results,
+    bool is_first_approx
+) {
     if (print_intermediate_results) {
         print_iteration_header();
+    }
+    if (print_intermediate_results) {
+        print_iteration(0, x0, delta, eng, (*functions[0])(x0));
     }
 
     int num = 0;
 
     while (!check_out_conditions(x0) && num < MAX_ITER) {
-
         if (is_first_approx) {
-            if (x0.back() < -EPS) return x0;
+            if (x0.back() < -EPS) {
+                return x0;
+            }
         }
 
         std::vector<int> nearly_to_active_cond_set = get_delta_conditions(x0);
@@ -187,12 +179,6 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> x0, bool pri
     }
 
     if (print_intermediate_results) {
-        std::cout <<  "num iterations: " << num << std::endl;
-        if (num >= MAX_ITER) {
-            std::cerr << "limit in AvailDirs::solv_dirs()" << std::endl;
-        }
-        std::cout << "delta final: " << delta << std::endl;
-
         int j = 0;
         for (const auto &i : functions) {
             std::cout << "f" << j << " = " << (*i)(x0) << std::endl;
@@ -200,86 +186,92 @@ std::vector<double> AvailDirs::solv_dirs_method(std::vector<double> x0, bool pri
         }
     }
 
-    // for (auto &i: d) {
-    //     std::cout << "deltaa: " << i << std::endl;
-    // }
-
     return x0;
 }
 
-
 std::vector<double> AvailDirs::calc_fist_approx(
-    Functions const& functions,
+    const Functions &functions,
     Matrix A,
-    std::vector<double> b
+    std::vector<double> b,
+    bool print_info
 ) {
     Functions functions_out;
     functions_out.reserve(functions.size());
-
 
     std::vector<double> x0 = solveUnderdeterminedEigen(A, b);
 
     double eng_start = -std::numeric_limits<double>::infinity();
 
-    for (auto const&i: functions) {
+    for (const auto &i : functions) {
         double v = (*i)(x0);
-        if (v > eng_start) eng_start = v;
+        if (v > eng_start) {
+            eng_start = v;
+        }
     }
 
-    for (auto &i: A) i.push_back(0);
+    for (auto &i : A) {
+        i.push_back(0);
+    }
     b.push_back(0);
     x0.push_back(eng_start);
 
     size_t problem_dim = get_problem_dim(A);
 
-    auto target = make_func_wrap([problem_dim](const autodiff::VectorXreal& v) {
-        return v(problem_dim - 1);
-    });
+    auto target = make_func_wrap([problem_dim](const autodiff::VectorXreal &v) { return v(problem_dim - 1); });
 
     functions_out.push_back(target);
 
     bool first = true;
-    for (auto &f: functions) {
-
+    for (auto &f : functions) {
         if (first) {
             first = false;
             continue;
         }
 
         std::weak_ptr<FuncWrap> weak_f = f;
-        auto cond = make_func_wrap([weak_f, problem_dim](const autodiff::VectorXreal& v) {
+        auto cond = make_func_wrap([weak_f, problem_dim](const autodiff::VectorXreal &v) {
             if (auto shared = weak_f.lock()) {
                 return shared->f(v) - v(problem_dim - 1);
             }
             throw std::runtime_error("weak_ptr in first_approx expired");
-    });
+        });
         functions_out.push_back(cond);
     }
 
     AvailDirs solver;
     solver.load_problem(functions_out, A, b);
-    return solver.solv_dirs_method(x0, false, true);
+
+    return solver.solv_dirs_method(x0, print_info, true);
 }
 
-size_t AvailDirs::get_problem_dim(Matrix const &A) {
-    if (A.size() == 0) throw std::runtime_error("matrix A is empty");
+size_t AvailDirs::get_problem_dim(const Matrix &A) {
+    if (A.size() == 0) {
+        throw std::runtime_error("matrix A is empty");
+    }
     int problem_dim = A[0].size();
-    if (problem_dim == 0) throw std::runtime_error("matrix A is empty");
+    if (problem_dim == 0) {
+        throw std::runtime_error("matrix A is empty");
+    }
 
     return problem_dim;
 }
 
 std::vector<double> AvailDirs::solve_problem(bool print_intermediate_results) {
+    if (print_intermediate_results) {
+        std::cout << "initial approximation: " << std::endl;
+    }
 
-
-    std::vector<double> fist_approx = AvailDirs::calc_fist_approx(functions, A, b);
+    std::vector<double> fist_approx = AvailDirs::calc_fist_approx(functions, A, b, print_intermediate_results);
 
     delta = -fist_approx.back() - EPS9;
     fist_approx.pop_back();
 
+    if (print_intermediate_results) {
+        std::cout << "Starting main optimization: " << std::endl;
+    }
+
     return solv_dirs_method(fist_approx, print_intermediate_results, print_intermediate_results);
 }
-
 
 bool AvailDirs::solve_subproblem(
     std::vector<double> &s_out,

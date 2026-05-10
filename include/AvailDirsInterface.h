@@ -21,11 +21,19 @@ real f(const VectorXreal& v) const override { Body }     \
 
 template<typename Target, typename... Constraints>
 std::vector<double> availdirs_solve(
-    const Matrix &A_eq,
-    const std::vector<double> &b_eq,
-    bool print_intermediate_results
+    Matrix &A_eq,
+    std::vector<double> &b_eq,
+    bool print_intermediate_results,
+    size_t dim = -1
 ) {
+    if (A_eq.size() == 0) {
+        if (dim == -1) throw std::runtime_error("matrix A is empty and dim is not set; can't get problem dim");
+        A_eq.push_back(std::vector<double>(0, dim));
+        b_eq.push_back(0);
+    }
+
     AvailDirs solver;
+
     std::vector<Func> functions;
     functions.push_back(std::make_shared<Target>());
 

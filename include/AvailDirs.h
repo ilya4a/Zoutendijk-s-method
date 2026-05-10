@@ -20,13 +20,14 @@ class AvailDirs {
     std::vector<double> b;
 
     bool is_problem_exists;
-    bool is_first_approx;
 
     double alpha;
     double lambda;
 
     double delta;
     double eng;
+
+    int dim;
 
     void calc_columns_clp_simplex(
         ColSet &columns,
@@ -44,24 +45,27 @@ class AvailDirs {
         const std::vector<std::vector<double>> &A_eq
     );
 
-    std::vector<double> solveUnderdeterminedEigen();
-
     std::vector<int> get_delta_conditions(const std::vector<double> &x);
 
     double calc_new_alpha(const std::vector<double> &x, const std::vector<double> &s);
 
     bool check_out_conditions(const std::vector<double> &x);
 
-    std::vector<double> solv_dirs_method(std::vector<double> &x0, bool print_intermediate_results);
-    std::vector<double> calc_fist_approx();
+    std::vector<double> solv_dirs_method(std::vector<double> x0, bool print_intermediate_results, bool is_first_approx);
 
-    // static std::vector<double> calc_fist_approx(
-    //     Functions &functions,
-    //     Matrix &A,
-    //     std::vector<double> &b,
-    //     double alpha,
-    //     double lambda
-    // );
+
+
+    static std::vector<double> calc_fist_approx(
+        Functions const& functions,
+        Matrix A,
+        std::vector<double> b
+    );
+
+    static size_t get_problem_dim(Matrix const& A);
+
+
+    static std::vector<double> solveUnderdeterminedEigen(Matrix& A, std::vector<double> b);
+
 
   public:
     AvailDirs();

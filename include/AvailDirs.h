@@ -7,6 +7,10 @@
 #include "diff.h"
 
 class AvailDirs {
+    std::vector<double> d;
+
+    double temp_delta = 0;
+
     using ColSet = std::vector<std::vector<std::pair<int, double>>>;
     using Matrix = std::vector<std::vector<double>>;
     using Functions = std::vector<std::shared_ptr<FuncWrap>>;
@@ -14,6 +18,7 @@ class AvailDirs {
     const int MAX_POW = 100;
     const int MAX_ITER = 100;
     const double EPS = 1e-3;
+    const double EPS9 = 1e-9;
 
     Functions functions;
     Matrix A;

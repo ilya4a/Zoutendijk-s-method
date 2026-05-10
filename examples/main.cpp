@@ -7,19 +7,42 @@ MAKE_FUNC(Cond1, return v(0) * v(0) + v(1) * v(1) + v(2) * v(2) - 4;)
 MAKE_FUNC(Cond2, return v(0) + 2 * v(1) - v(2) - 2;)
 MAKE_FUNC(Cond3, return -v(1) + 3 * v(3) - 5;)
 
-int main() {
-    Matrix A = {
-        { 1.0, 1.0, 1.0, 1.0 }
-    };
-    std::vector<double> b = { 3.0 };
+MAKE_FUNC(T1, return v(0) + v(1); )
+
+MAKE_FUNC(C1, return    0.5*(v(0) - 2) * (v(0) - 2) - v(1) + 4.57; )
+
+void t2() {
+    // Matrix A = {
+    //     { 1.0, 0.0}
+    // };
+    // std::vector<double> b = { 0.0 };
+    std::vector<double> b;
+    Matrix A;
+
 
     try {
-        auto solution = availdirs_solve<Target, Cond1, Cond2, Cond3>(A, b, true);
+        auto solution = availdirs_solve<T1, C1>(A, b, true, 2);
         print_vector(solution, "Solution:");
-
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';
-        return 1;
     }
-    return 0;
+}
+
+
+int main() {
+    t2();
+    // Matrix A = {
+    //     { 1.0, 1.0, 1.0, 1.0 }
+    // };
+    // std::vector<double> b = { 3.0 };
+    //
+    // try {
+    //     auto solution = availdirs_solve<Target, Cond1, Cond2, Cond3>(A, b, true);
+    //     print_vector(solution, "Solution:");
+    //
+    // } catch (const std::exception &e) {
+    //     std::cerr << e.what() << '\n';
+    //     return 1;
+    // }
+    // return 0;
 }

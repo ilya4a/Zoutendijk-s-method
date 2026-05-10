@@ -28,7 +28,7 @@ std::vector<double> availdirs_solve(
 ) {
     if (A_eq.size() == 0) {
         if (dim == -1) throw std::runtime_error("matrix A is empty and dim is not set; can't get problem dim");
-        A_eq.push_back(std::vector<double>(0, dim));
+        A_eq.push_back(std::vector<double>(dim, 0));
         b_eq.push_back(0);
     }
 
@@ -40,9 +40,11 @@ std::vector<double> availdirs_solve(
     auto add = [&](auto func) { functions.push_back(std::move(func)); };
     (add(std::make_shared<Constraints>()), ...);
 
+
     if (!solver.load_problem(std::move(functions), A_eq, b_eq)) {
         throw std::runtime_error("AvailDirs: cannot load problem");
     }
+
     return solver.solve_problem(print_intermediate_results);
 }
 
